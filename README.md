@@ -73,5 +73,13 @@ This machine is Apple Silicon (arm64), but several CLI tools were still x86_64-o
 - Budget: `platform-foundation-monthly` ($150/mo, alerts to laxmikanth80@gmail.com at $50/$150)
 - GitHub repo: https://github.com/laxmikanth80/ai-platform-foundation
 
+### Concepts covered
+- **Python packaging** — `pyproject.toml` declares the project (name, Python version, dependencies) so a folder of scripts becomes a real installable project. `uv sync` / `pip install -e .` makes `import platform_foundation` work cleanly anywhere in the repo, with dependencies pinned and reproducible instead of "whatever's installed globally."
+- **Linting vs. testing** — linting (`ruff check .`) is static analysis: catches style issues, unused imports, likely bugs, *without running the code*. Testing (`pytest`) actually runs the code and checks behavior. Different jobs, both needed.
+- **pre-commit** — wires checks (ruff, formatting, YAML validation, etc.) directly into `git commit`, so they run locally *before* a commit completes. Config lives in `.pre-commit-config.yaml`; one-time setup per repo is `pre-commit install` (wires into `.git/hooks/pre-commit`) — after that, every commit auto-triggers it.
+- **pre-commit vs. CI** — pre-commit is the fast local loop; CI (`.github/workflows/ci.yml`) is the server-side backstop that reruns the same checks on GitHub for every push/PR, catching anything that slipped past pre-commit (e.g. a commit made with `--no-verify`, or pushed from a machine without the hooks installed).
+- **`uv` workflow** — `uv sync --extra dev` reads `pyproject.toml`, creates a `.venv/`, and installs the project plus its `dev` dependencies, pinned in `uv.lock` for reproducibility. `uv run <command>` runs something inside that venv without manually activating it — e.g. `uv run pytest`, `uv run ruff check .`.
+- **Why this exact combination matters:** this is what "production-first mindset" cashes out to in practice for any repo. The pattern (`pyproject.toml` + pre-commit + CI) is identical across all 8 chapters — fluency here means every later chapter is "copy and adjust," not "relearn from scratch."
+
 ### Next session
 Pick up with the actual Terraform content — VPC + EKS cluster skeleton (Week 1–2 scope per the execution plan).
