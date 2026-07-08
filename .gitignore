@@ -13,7 +13,8 @@ venv/
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
-.terraform.lock.hcl
+# .terraform.lock.hcl is intentionally NOT ignored — commit it, per Terraform's
+# own guidance, so provider version selection is reproducible across machines.
 
 # AWS
 .aws-sam/
