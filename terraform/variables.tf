@@ -45,3 +45,15 @@ variable "node_instance_type" {
   type        = string
   default     = "t3.medium"
 }
+
+variable "github_org" {
+  description = "GitHub org/user that owns this repo — scopes which workflow runs can assume the CI IAM role via OIDC"
+  type        = string
+  default     = "laxmikanth80"
+}
+
+variable "github_repo" {
+  description = "Repo name — combined with github_org to scope the OIDC trust condition"
+  type        = string
+  default     = "ai-platform-foundation"
+}

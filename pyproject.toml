@@ -3,13 +3,17 @@ name = "platform-foundation"
 version = "0.1.0"
 description = "Ch.1 — AI Platform Foundation: base repo, CI, and IaC conventions"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
     "pre-commit>=3.8",
+    "httpx>=0.27",
 ]
 
 [build-system]

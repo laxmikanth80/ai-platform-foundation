@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform-foundation
+spec:
+  # ClusterIP, not LoadBalancer — a real AWS load balancer costs ~$16/month
+  # just to exist, before any traffic. Not worth it to prove a hello-world app
+  # works; verify with `kubectl port-forward` instead. Real external exposure
+  # comes later (Ch.7/Ch.8) once there's an actual ingress strategy decided on
+  # deliberately, not as a side effect of this scaffold.
+  type: ClusterIP
+  selector:
+    app: platform-foundation
+  ports:
+    - port: 80
+      targetPort: 8000

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-foundation
+  labels:
+    app: platform-foundation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: platform-foundation
+  template:
+    metadata:
+      labels:
+        app: platform-foundation
+    spec:
+      containers:
+        - name: platform-foundation
+          # ECR repo URLs are deterministic (account_id.dkr.ecr.region.amazonaws.com/repo_name),
+          # so this can be written before terraform apply even creates the repo.
+          # CI replaces the CI_IMAGE_TAG placeholder with the actual git SHA on every push.
+          image: 668639472905.dkr.ecr.us-east-1.amazonaws.com/ai-platform-foundation:CI_IMAGE_TAG
+          ports:
+            - containerPort: 8000
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            # Without these, a single misbehaving pod can starve everything
+            # else on the node — the scheduler also needs them to bin-pack
+            # pods sensibly across nodes.
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

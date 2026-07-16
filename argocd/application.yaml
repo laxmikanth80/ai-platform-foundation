@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-foundation
+  namespace: argocd
+spec:
+  project: default # Argo CD's built-in default project; a multi-team org would
+  # scope a custom AppProject instead, unnecessary for a single personal app
+
+  source:
+    repoURL: https://github.com/laxmikanth80/ai-platform-foundation.git
+    targetRevision: main
+    path: k8s # exactly the folder with deployment.yaml + service.yaml
+
+  destination:
+    server: https://kubernetes.default.svc # "the same cluster Argo CD itself runs in"
+    namespace: platform-foundation
+
+  syncPolicy:
+    automated:
+      prune: true # if a manifest is deleted from Git, delete the matching
+      # resource from the cluster too — not just additive
+      selfHeal: true # if someone kubectl-edits something in the cluster
+      # directly, revert it back to match Git automatically.
+      # This is the actual reconciliation loop, made concrete.
+    syncOptions:
+      - CreateNamespace=true # creates the `platform-foundation` namespace
+        # automatically since it doesn't exist yet
