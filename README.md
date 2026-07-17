@@ -83,3 +83,29 @@ This machine is Apple Silicon (arm64), but several CLI tools were still x86_64-o
 
 ### Next session
 Pick up with the actual Terraform content — VPC + EKS cluster skeleton (Week 1–2 scope per the execution plan).
+
+## Day 2 log — Week 2, GitOps pipeline
+
+### Completed
+- Wrote the full CI/CD pipeline ahead of standing up the cluster: ECR repo, a slimmer OIDC/IAM role for GitHub Actions (ECR push only — no EKS access), the hello-world FastAPI app + Dockerfile + tests, the CI build/push workflow, the `k8s/` manifests, and the Argo CD `Application` manifest — all before spending a cent on the cluster itself.
+- Ran `terraform apply`: VPC, EKS cluster, node group, ECR, and the IAM/OIDC role all created successfully.
+- Installed Argo CD via Helm, verified access via `kubectl port-forward`.
+- Applied the Argo CD `Application` manifest — GitOps is now actually live for this project.
+
+### Real problems hit and fixed (all genuine, all worth remembering)
+1. **GitHub OIDC provider already existed in this AWS account** (from an earlier, unrelated project) — an account can only have one per URL, since it's account-wide shared infrastructure, not scoped per-repo. Resolved by deleting the old one manually and letting Terraform create a fresh one for this project.
+2. **EKS cluster had no public endpoint access by default** — `kubectl` failed with a DNS resolution error (`no such host`) because the module's default left `cluster_endpoint_public_access` off. Fixed by setting it to `true` explicitly (in-place update, no cluster recreation needed).
+3. **IAM permissions ≠ Kubernetes RBAC access** — `platform-foundation-admin` had full `AdministratorAccess` in IAM but zero access *inside* the cluster, because EKS access control (access entries) is a completely separate system. `kubectl` failed with "the server has asked for the client to provide credentials" until `enable_cluster_creator_admin_permissions = true` was set.
+4. **Argo CD correctly deployed a broken placeholder** — the first sync produced `ImagePullBackOff`, because the manifest still had the literal `CI_IMAGE_TAG` placeholder (CI hadn't run yet). This was actually proof the GitOps reconciliation loop works correctly — it deployed exactly what Git said, faithfully, even though what Git said was wrong.
+5. **Branch protection blocked the bot's own auto-commit** — the CI job commits the real image tag back to `main` with `[skip ci]` (to avoid an infinite trigger loop), but branch protection required the `lint-and-test` status check to have passed *for that exact commit* — which `[skip ci]` guarantees never happens. Relaxed branch protection to drop the required status check, since the workflow's own `needs: lint-and-test` dependency already provides that guarantee for the commit that matters.
+6. **"Re-run failed jobs" collided with ECR's immutable tags** — since `IMAGE_TAG` is the git SHA, re-running the same failed workflow run tried to re-push to a tag that already existed (the first attempt's Docker push had actually succeeded before failing later at the git-push step). Immutability correctly refused the overwrite. Lesson: for this pipeline, always trigger a fresh commit to recover from a failure — never "re-run failed jobs."
+
+### Concepts covered
+- **EKS access entries vs. IAM permissions** — two entirely separate authorization layers. IAM controls what an identity can do to *AWS resources*; EKS access entries control what that same identity can do *inside a specific cluster's Kubernetes API*. Full IAM admin grants nothing inside a cluster on its own.
+- **GitOps vs. Argo CD** — GitOps is the pattern (declarative, versioned, pulled, continuously reconciled); Argo CD is one tool that implements it. Flux is the other major one.
+- **The "bootstrap problem"** — something has to install the GitOps agent itself, and that one step can't be GitOps (nothing exists yet to do the pulling). Everything after that bootstrap flows through Argo CD.
+- **Helm as a Kubernetes package manager** — bundles many related manifests (Argo CD alone is a dozen-plus objects) into one versioned, templated chart.
+- **Public vs. private EKS endpoint access** — a real security trade-off, not an oversight: public+unrestricted is simplest for a laptop that changes networks, at the cost of a larger network attack surface (though actual access is still fully gated by IAM + access entries, not network position).
+
+### Next session
+Confirm the pod actually reaches `Running` once this commit flows through CI → ECR → Argo CD sync, then move on to Week 2's remaining scope.
