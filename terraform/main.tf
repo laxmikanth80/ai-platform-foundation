@@ -42,8 +42,24 @@ module "eks" {
   cluster_name    = "${var.project_name}-eks"
   cluster_version = var.eks_cluster_version
 
+  # Defaults to false — without it, EKS access control (a separate system
+  # from IAM permissions) never grants anyone Kubernetes RBAC access, even
+  # the identity that ran `terraform apply`. This is what was missing:
+  # platform-foundation-admin had full IAM AdministratorAccess but zero
+  # Kubernetes-level access to this specific cluster.
+  enable_cluster_creator_admin_permissions = true
+
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
+
+  # Public access is required for kubectl from outside the VPC (your laptop);
+  # the module's default left this off, which is why the endpoint had no
+  # public DNS record at all. Left open to 0.0.0.0/0 for simplicity on a
+  # personal sandbox account — a real production cluster would restrict
+  # cluster_endpoint_public_access_cidrs to known office/VPN IP ranges
+  # instead of leaving this wide open. Worth an ADR note.
+  cluster_endpoint_public_access  = true
+  cluster_endpoint_private_access = true
 
   eks_managed_node_groups = {
     default = {
