@@ -19,7 +19,7 @@ spec:
           # ECR repo URLs are deterministic (account_id.dkr.ecr.region.amazonaws.com/repo_name),
           # so this can be written before terraform apply even creates the repo.
           # CI replaces the CI_IMAGE_TAG placeholder with the actual git SHA on every push.
-          image: 668639472905.dkr.ecr.us-east-1.amazonaws.com/ai-platform-foundation:CI_IMAGE_TAG
+          image: 668639472905.dkr.ecr.us-east-1.amazonaws.com/ai-platform-foundation:61a251ddbc962ef4efafb47627f335cd5130a8eb
           ports:
             - containerPort: 8000
           livenessProbe:
