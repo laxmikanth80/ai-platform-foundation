@@ -35,9 +35,16 @@ variable "public_subnet_cidrs" {
 }
 
 variable "eks_cluster_version" {
-  description = "Kubernetes version for the EKS control plane"
+  description = <<-EOT
+    Kubernetes version for the EKS control plane. Must stay within AWS's
+    STANDARD support window — once a version ages out, AWS silently switches
+    to ExtendedSupport billing at ~5x the normal control-plane rate (this bit
+    us: 1.30 alone added ~$40 in a few days). Check current standard-support
+    versions before ever changing this:
+    aws eks describe-cluster-versions --query "clusterVersions[?clusterVersionPolicy=='STANDARD']"
+  EOT
   type        = string
-  default     = "1.30"
+  default     = "1.34"
 }
 
 variable "node_instance_type" {
